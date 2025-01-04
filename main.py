@@ -1,6 +1,9 @@
 from call_astrology import call_astrology_api
 from interpretation import call_openai_api
 from sheet_integration import append_to_google_sheet
+import json
+from immanuel.classes.serialize import ToJSON
+from immanuel import charts
 
 def main_workflow(query, user_details, feedback, sheet_id):
     # Extract user details

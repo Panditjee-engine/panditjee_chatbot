@@ -1,0 +1,56 @@
+
+Stock Market Prediction Rules
+1. Jupiter and Mercury's Influence on Finance:
+   - If the angular distance between Jupiter and Mercury in the natal chart is 15 degrees or less, it predicts positive trends in financial markets.
+
+2. Saturn's Influence on Long-Term Investments:
+   - If Saturn is transiting Capricorn (position within the 10th zodiac sign, i.e., 270-300 degrees), stable growth is predicted for long-term investments.
+
+3. Rahu's Impact on Speculative Markets:
+   - If Rahu is transiting Taurus, Leo, or Scorpio (2nd, 5th, or 8th zodiac signs, i.e., 30-60, 120-150, or 210-240 degrees), high volatility is expected in speculative stocks.
+
+---
+
+Combination Analysis Rules
+1. Wealth Combination 2:
+   - If the angular distance between Jupiter and Venus in the natal chart is 10 degrees or less, this combination is detected.
+
+2. Marriage Combination 1:
+   - If Venus is in Virgo (the 6th zodiac sign, i.e., 150-180 degrees), and the 7th lord's position aligns appropriately, this combination is detected.
+
+---
+
+Nakshatra Analysis Rules
+1. Planets are mapped to Nakshatras based on their degree positions:
+   - Each Nakshatra spans 13.3333 degrees (360 degrees divided by 27 Nakshatras).
+   - The Nakshatra is determined by dividing the planet's position by 13.3333 and taking the modulo 27 of the result.
+
+2. For each planet, the Nakshatra details include:
+   - Ruler: The planet ruling the Nakshatra.
+   - Symbol: The symbol representing the Nakshatra.
+   - Deity: The deity associated with the Nakshatra.
+   - Characteristics: Traits or qualities of the Nakshatra.
+
+---
+
+General Divisional Chart Rules
+1. Divisional charts (e.g., D1 to D60) are based on dividing each zodiac sign into smaller segments to analyze specific areas of life.
+   - Examples include:
+     - D9 (Navamsa): Marriage and spiritual growth.
+     - D10 (Dashamsa): Career and social status.
+     - D7 (Saptamsha): Progeny and legacy.
+     - D60 (Shashtiamsha): Detailed analysis of past life karma and destiny.
+
+---
+
+Planetary Dasha (Vimshottari Dasha) Periods
+1. Each planetary dasha has a specific period in years:
+   - Ketu: 7 years
+   - Venus: 20 years
+   - Sun: 6 years
+   - Moon: 10 years
+   - Mars: 7 years
+   - Rahu: 18 years
+   - Jupiter: 16 years
+   - Saturn: 19 years
+   - Mercury: 17 years

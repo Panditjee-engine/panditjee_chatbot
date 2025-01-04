@@ -1,9 +1,9 @@
 import math
 from datetime import datetime, timedelta
-from swisseph import swe_set_ephe_path, swe_calc_ut, swe_julday, SE_SUN, SE_MOON, SE_MARS, SE_MERCURY, SE_JUPITER, SE_VENUS, SE_SATURN, SEFLG_SIDEREAL, SE_SIDM_LAHIRI
+# from swisseph import swe_set_ephe_path, swe_calc_ut, swe_julday, SE_SUN, SE_MOON, SE_MARS, SE_MERCURY, SE_JUPITER, SE_VENUS, SE_SATURN, SEFLG_SIDEREAL, SE_SIDM_LAHIRI
 
 # Set path for Swiss Ephemeris files
-swe_set_ephe_path("/path/to/ephemeris/files")
+# swe_set_ephe_path("/path/to/ephemeris/files")
 
 # Constants
 PLANETARY_PERIODS = {
