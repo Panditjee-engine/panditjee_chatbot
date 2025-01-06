@@ -1,0 +1,50 @@
+import pandas as pd
+
+# Initialize an Ashtakavarga template for all planets
+PLANETS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
+ZODIAC_SIGNS = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"]
+
+# Example Bindus for each planet (can be customized based on input)
+ashtakavarga_data = {
+    "Sun": [4, 3, 2, 5, 4, 3, 5, 2, 3, 4, 3, 4],
+    "Moon": [3, 2, 3, 4, 5, 3, 2, 4, 3, 2, 4, 3],
+    "Mars": [2, 3, 4, 2, 3, 5, 4, 3, 2, 3, 5, 4],
+    "Mercury": [4, 5, 3, 4, 2, 3, 5, 3, 2, 4, 3, 4],
+    "Jupiter": [5, 3, 4, 5, 3, 2, 4, 3, 5, 2, 4, 3],
+    "Venus": [3, 4, 3, 5, 3, 4, 2, 3, 4, 5, 3, 4],
+    "Saturn": [2, 3, 5, 3, 4, 2, 3, 5, 3, 4, 2, 3]
+}
+
+# Convert to DataFrame for easy handling
+ashtakavarga_df = pd.DataFrame(ashtakavarga_data, index=ZODIAC_SIGNS)
+
+# Compute Sarvashtakavarga (Sum of all planetary Bindus for each sign)
+ashtakavarga_df["Sarvashtakavarga"] = ashtakavarga_df.sum(axis=1)
+
+# Define thresholds for predictions
+BINDUS_FAVORABLE = 28  # Favorable threshold
+BINDUS_UNFAVORABLE = 25  # Unfavorable threshold
+
+# Prediction logic based on Sarvashtakavarga
+def predict_ashtakavarga(df):
+    predictions = {}
+    for sign in df.index:
+        bindus = df.loc[sign, "Sarvashtakavarga"]
+        if bindus >= BINDUS_FAVORABLE:
+            predictions[sign] = "Highly favorable"
+        elif bindus <= BINDUS_UNFAVORABLE:
+            predictions[sign] = "Challenging period"
+        else:
+            predictions[sign] = "Neutral to moderately favorable"
+    return predictions
+
+# Get predictions
+predictions = predict_ashtakavarga(ashtakavarga_df)
+
+# Output the results
+print("Ashtakavarga Chart:")
+print(ashtakavarga_df)
+print("\nPredictions for each Zodiac Sign:")
+for sign, prediction in predictions.items():
+    print(f"{sign}: {prediction}")
+
