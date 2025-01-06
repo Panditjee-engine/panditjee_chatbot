@@ -1,0 +1,87 @@
+import random
+
+# Define omens and their interpretations with probability scores
+omens = {
+    "animals": {
+        "cat_crossing": {"type": "negative", "message": "Potential obstacles or delays.", "probability": 30},
+        "cow_blocking_path": {"type": "positive", "message": "Auspicious sign; success is likely.", "probability": 80},
+        "dog_barking": {"type": "neutral", "message": "Proceed with caution; stay vigilant.", "probability": 50}
+    },
+    "sounds": {
+        "temple_bell": {"type": "positive", "message": "Good news or blessings on the way.", "probability": 90},
+        "crow_cawing": {"type": "negative", "message": "Be cautious; challenges may arise.", "probability": 40},
+        "baby_laughing": {"type": "positive", "message": "Joyful and prosperous events ahead.", "probability": 85}
+    },
+    "human_actions": {
+        "sneezing_once": {"type": "negative", "message": "Postpone or rethink your plans.", "probability": 25},
+        "sneezing_twice": {"type": "neutral", "message": "No significant impact; proceed as planned.", "probability": 60},
+        "hiccups": {"type": "neutral", "message": "Someone is remembering you; be mindful of your connections.", "probability": 50}
+    }
+}
+
+# Direction meanings with probabilities
+directions = {
+    "east": {"meaning": "Success and auspicious beginnings.", "probability_modifier": 20},
+    "west": {"meaning": "Delays or resistance.", "probability_modifier": -20},
+    "north": {"meaning": "Gains or progress.", "probability_modifier": 15},
+    "south": {"meaning": "Challenges or disputes.", "probability_modifier": -15}
+}
+
+# Time-based meanings with probabilities
+time_of_day = {
+    "morning": {"meaning": "Omens are stronger and more auspicious in the morning.", "probability_modifier": 20},
+    "afternoon": {"meaning": "Neutral influence; depends on the omen type.", "probability_modifier": 0},
+    "evening": {"meaning": "Weakened influence; delays or introspection likely.", "probability_modifier": -10}
+}
+
+# Function to interpret omens with enhanced features
+def interpret_omen(omen_category, omen_type, direction, time):
+    omen_data = omens.get(omen_category, {}).get(omen_type, {})
+    if not omen_data:
+        return "Omen not recognized. No prediction available."
+    
+    # Get base probabilities and modifiers
+    base_probability = omen_data["probability"]
+    direction_modifier = directions.get(direction, {}).get("probability_modifier", 0)
+    time_modifier = time_of_day.get(time, {}).get("probability_modifier", 0)
+    
+    # Calculate final probability
+    final_probability = base_probability + direction_modifier + time_modifier
+    final_probability = max(0, min(100, final_probability))  # Clamp to range 0-100
+    
+    # Combine interpretations
+    prediction = f"Omen Type: {omen_category}\n"
+    prediction += f"Message: {omen_data.get('message', 'No message.')}\n"
+    prediction += f"Direction: {directions.get(direction, {}).get('meaning', 'Unknown direction.')}\n"
+    prediction += f"Time Influence: {time_of_day.get(time, {}).get('meaning', 'Unknown time.')}\n"
+    prediction += f"Final Probability of Favorable Outcome: {final_probability}%\n"
+    prediction += f"Overall Outcome: {'Positive' if final_probability > 70 else 'Neutral' if final_probability > 40 else 'Negative'}"
+    return prediction
+
+# Function for composite omens
+def composite_omen_analysis(omens_list, direction, time):
+    combined_probability = 0
+    for omen in omens_list:
+        category, omen_type = omen
+        omen_data = omens.get(category, {}).get(omen_type, {})
+        if omen_data:
+            base_probability = omen_data["probability"]
+            direction_modifier = directions.get(direction, {}).get("probability_modifier", 0)
+            time_modifier = time_of_day.get(time, {}).get("probability_modifier", 0)
+            combined_probability += base_probability + direction_modifier + time_modifier
+    combined_probability = combined_probability / len(omens_list)  # Average probability
+    combined_probability = max(0, min(100, combined_probability))  # Clamp to range 0-100
+    return f"Composite Omen Analysis: Final Probability of Favorable Outcome: {combined_probability}%\nOverall Outcome: {'Positive' if combined_probability > 70 else 'Neutral' if combined_probability > 40 else 'Negative'}"
+
+# Example usage for a single omen
+omen_category = "animals"
+omen_type = "cat_crossing"
+direction = "west"
+time = "morning"
+result = interpret_omen(omen_category, omen_type, direction, time)
+print(result)
+
+# Example usage for composite omens
+omens_list = [("animals", "cat_crossing"), ("sounds", "crow_cawing")]
+composite_result = composite_omen_analysis(omens_list, "north", "afternoon")
+print("\n", composite_result)
