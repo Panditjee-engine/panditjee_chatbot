@@ -1,0 +1,118 @@
+from datetime import datetime
+import math
+from collections import Counter
+
+# Planetary and House Traits
+planetary_traits = {
+    "Sun": "Soul, leadership, vitality",
+    "Moon": "Mind, emotions, mother",
+    "Mars": "Action, energy, courage",
+    "Mercury": "Communication, intellect, business",
+    "Jupiter": "Wisdom, expansion, prosperity",
+    "Venus": "Love, beauty, relationships",
+    "Saturn": "Discipline, karma, challenges",
+    "Rahu": "Ambition, materialism, transformation",
+    "Ketu": "Spirituality, detachment, past karma",
+}
+
+houses_traits = {
+    1: "Self, personality, health",
+    2: "Wealth, family, speech",
+    3: "Siblings, courage, communication",
+    4: "Mother, home, happiness",
+    5: "Children, creativity, education",
+    6: "Enemies, health, service",
+    7: "Spouse, partnerships, relationships",
+    8: "Transformation, occult, inheritance",
+    9: "Luck, dharma, spirituality",
+    10: "Career, profession, reputation",
+    11: "Gains, aspirations, social circles",
+    12: "Losses, moksha, foreign travels",
+}
+
+# Zodiac Signs
+zodiac_signs = [
+    "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+    "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"
+]
+
+# Helper Functions
+def reduce_to_single_digit(number):
+    """Reduce a number to a single digit or Master Numbers."""
+    while number > 9 and number not in {11, 22, 33}:
+        number = sum(int(digit) for digit in str(number))
+    return number
+
+def calculate_planet_positions(birth_date):
+    """Simulate planetary positions for simplicity."""
+    seed = int(birth_date.strftime("%Y%m%d"))
+    random_positions = [(seed * i % 360) for i in range(1, 10)]
+    planets = list(planetary_traits.keys())
+    return {planets[i]: (random_positions[i] % 30, zodiac_signs[random_positions[i] // 30]) for i in range(len(planets))}
+
+def assign_houses(birth_time):
+    """Assign planets to houses based on simplified logic."""
+    degrees = math.floor(birth_time.hour % 12 * 30 + birth_time.minute * 0.5)
+    house_assignments = {}
+    for i in range(1, 13):
+        house_assignments[i] = zodiac_signs[(degrees // 30 + i - 1) % 12]
+    return house_assignments
+
+def yearly_prediction(life_path_number, current_year):
+    """Generate yearly prediction based on Life Path Number and planetary cycles."""
+    year_cycle = reduce_to_single_digit(current_year)
+    combined_number = reduce_to_single_digit(life_path_number + year_cycle)
+    
+    yearly_themes = {
+        1: "A year of leadership, new beginnings, and personal growth.",
+        2: "Focus on relationships, partnerships, and harmony.",
+        3: "A creative and expressive year with opportunities for joy.",
+        4: "A year of hard work, discipline, and building foundations.",
+        5: "Expect change, adventure, and freedom this year.",
+        6: "A nurturing year focused on family, relationships, and balance.",
+        7: "A reflective year for spiritual growth and introspection.",
+        8: "Ambition and financial growth are the highlights of this year.",
+        9: "Completion of cycles, compassion, and preparing for new beginnings.",
+    }
+    
+    return yearly_themes.get(combined_number, "A year of unique opportunities and challenges.")
+
+def important_years(life_path_number):
+    """Calculate important milestone years based on Life Path Number."""
+    milestones = [life_path_number + i * 9 for i in range(1, 10)]
+    return [year for year in milestones if year <= 100]
+
+def difficult_years(life_path_number):
+    """Identify challenging years based on Life Path and Saturn/Ketu influence."""
+    challenges = [life_path_number + 7 * i for i in range(1, 10)]  # Saturn cycles
+    return [year for year in challenges if year <= 100]
+
+# Predictions Based on Bhrigu Nandi Nadi
+def bhrigu_nandi_nadi_prediction(planet_positions, houses):
+    """Generate predictions based on planetary placements."""
+    predictions = []
+    for planet, (degree, sign) in planet_positions.items():
+        house = [k for k, v in houses.items() if v == sign][0]
+        predictions.append(f"{planet} in {sign} (House {house}): {planetary_traits[planet]} - {houses_traits[house]}.")
+        
+        if planet == "Jupiter" and house == 9:
+            predictions.append("Strong dharma and spiritual inclination due to Jupiter's placement.")
+        if planet == "Saturn" and house in [8, 12]:
+            predictions.append("Karmic challenges related to transformation or detachment due to Saturn.")
+        if planet == "Venus" and house == 7:
+            predictions.append("Favorable for relationships and partnerships due to Venus in the 7th house.")
+    
+    return predictions
+
+# Main Program
+if __name__ == "__main__":
+    print("🔮 Welcome to Bhrigu Nandi Nadi Astrology 🔮")
+    
+    # Input birth details
+    birth_date_input = input("Enter your date of birth (YYYY-MM-DD): ")
+    birth_time_input = input("Enter your time of birth (HH:MM): ")
+    birth_date = datetime.strptime(birth_date_input, "%Y-%m-%d")
+    birth_time = datetime.strptime(birth_time_input, "%H:%M")
+    current_year = datetime.now().year
+    
+   
