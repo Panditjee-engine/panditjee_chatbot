@@ -1,0 +1,130 @@
+import pandas as pd
+
+# Planetary positions and Nakshatra/Sub-lord data (example data; replace with actual values)
+planetary_positions = {
+    "Sun": {"degree": 25.45, "sign": "Leo", "nakshatra": "Uttara Phalguni", "sub_lord": "Saturn"},
+    "Moon": {"degree": 18.30, "sign": "Pisces", "nakshatra": "Revati", "sub_lord": "Mercury"},
+    "Mars": {"degree": 5.20, "sign": "Taurus", "nakshatra": "Krittika", "sub_lord": "Venus"},
+    "Mercury": {"degree": 10.15, "sign": "Virgo", "nakshatra": "Hasta", "sub_lord": "Mars"},
+    "Jupiter": {"degree": 28.50, "sign": "Aquarius", "nakshatra": "Purva Bhadrapada", "sub_lord": "Saturn"},
+    "Venus": {"degree": 15.10, "sign": "Libra", "nakshatra": "Swati", "sub_lord": "Rahu"},
+    "Saturn": {"degree": 2.40, "sign": "Capricorn", "nakshatra": "Uttara Ashadha", "sub_lord": "Sun"},
+    "Rahu": {"degree": 20.00, "sign": "Gemini", "nakshatra": "Ardra", "sub_lord": "Venus"},
+    "Ketu": {"degree": 20.00, "sign": "Sagittarius", "nakshatra": "Mula", "sub_lord": "Mars"}
+}
+
+# House cusp significations (example data; replace with actual house data)
+house_cusp_significations = {
+    1: ["Self", "Personality", "Health"],
+    2: ["Wealth", "Family", "Speech"],
+    3: ["Siblings", "Communication", "Courage"],
+    4: ["Mother", "Home", "Happiness"],
+    5: ["Children", "Creativity", "Education"],
+    6: ["Enemies", "Debts", "Diseases"],
+    7: ["Marriage", "Partnerships", "Public Relations"],
+    8: ["Longevity", "Occult", "Transformations"],
+    9: ["Luck", "Religion", "Long-Distance Travel"],
+    10: ["Career", "Status", "Authority"],
+    11: ["Gains", "Friendships", "Fulfillment of Desires"],
+    12: ["Expenditure", "Losses", "Spirituality"]
+}
+
+# Nakshatra significance mapping (simplified example; replace with full Nakshatra data)
+nakshatra_mapping = {
+    "Uttara Phalguni": {"lord": "Sun", "significations": ["Stability", "Authority"]},
+    "Revati": {"lord": "Mercury", "significations": ["Wealth", "Completion"]},
+    "Krittika": {"lord": "Sun", "significations": ["Transformation", "Aggression"]},
+    "Hasta": {"lord": "Moon", "significations": ["Creativity", "Dexterity"]},
+    "Purva Bhadrapada": {"lord": "Jupiter", "significations": ["Spirituality", "Endings"]},
+    "Swati": {"lord": "Rahu", "significations": ["Freedom", "Change"]},
+    "Uttara Ashadha": {"lord": "Sun", "significations": ["Victory", "Persistence"]},
+    "Ardra": {"lord": "Rahu", "significations": ["Storms", "Transformation"]},
+    "Mula": {"lord": "Ketu", "significations": ["Roots", "Destruction"]}
+}
+
+# Vimshottari Dasha mapping
+vimshottari_dasha = {
+    "Ketu": 7,
+    "Venus": 20,
+    "Sun": 6,
+    "Moon": 10,
+    "Mars": 7,
+    "Rahu": 18,
+    "Jupiter": 16,
+    "Saturn": 19,
+    "Mercury": 17
+}
+
+# Function to analyze significators for a question
+def analyze_significators(question_house, planets, house_significations):
+    significators = []
+    for planet, details in planets.items():
+        if question_house in house_significations:
+            planet_nakshatra = details["nakshatra"]
+            planet_sub_lord = details["sub_lord"]
+            nakshatra_info = nakshatra_mapping.get(planet_nakshatra, {})
+            
+            # If the Nakshatra or Sub-Lord is relevant to the house, add as a significator
+            if nakshatra_info and any(sig in house_significations[question_house] for sig in nakshatra_info["significations"]):
+                significators.append({
+                    "Planet": planet,
+                    "Nakshatra": planet_nakshatra,
+                    "Sub-Lord": planet_sub_lord,
+                    "Significations": nakshatra_info["significations"]
+                })
+    return significators
+
+# Function to check Vimshottari Dasha relevance
+def check_vimshottari_dasha(dasha_planet, significators):
+    for sig in significators:
+        if sig["Planet"] == dasha_planet:
+            return True
+    return False
+
+# Function to include transits
+def analyze_transits(transiting_planets, significators):
+    transit_results = []
+    for planet, position in transiting_planets.items():
+        for sig in significators:
+            if position["sign"] == sig["Nakshatra"]:
+                transit_results.append({
+                    "Transiting Planet": planet,
+                    "Affecting Planet": sig["Planet"],
+                    "Impact": "Strong"
+                })
+    return transit_results
+
+# Prediction function
+def predict_event(question_house, planets, house_significations, dasha_planet, transiting_planets):
+    significators = analyze_significators(question_house, planets, house_significations)
+    dasha_active = check_vimshottari_dasha(dasha_planet, significators)
+    transit_results = analyze_transits(transiting_planets, significators)
+    
+    if significators:
+        print(f"Prediction for House {question_house}: {house_significations[question_house]}")
+        print(f"Planets influencing this house:")
+        for sig in significators:
+            print(f"  - {sig['Planet']} (Nakshatra: {sig['Nakshatra']}, Sub-Lord: {sig['Sub-Lord']}, Significations: {sig['Significations']})")
+        if dasha_active:
+            print(f"Current Vimshottari Dasha Planet ({dasha_planet}) supports the event.")
+        else:
+            print(f"Current Vimshottari Dasha Planet ({dasha_planet}) does not directly support the event.")
+        if transit_results:
+            print(f"Transits affecting this house:")
+            for transit in transit_results:
+                print(f"  - {transit['Transiting Planet']} transiting {transit['Affecting Planet']}")
+        print("Outcome: Event is likely based on planetary and transit influences.")
+    else:
+        print(f"Prediction for House {question_house}: {house_significations[question_house]}")
+        print("No strong planetary influences. Outcome is uncertain or delayed.")
+
+# Example Transiting Planets (example data; replace with real transit data)
+transiting_planets = {
+    "Saturn": {"sign": "Capricorn"},
+    "Jupiter": {"sign": "Aquarius"}
+}
+
+# Example Usage
+question_house = 7  # House for marriage
+current_dasha_planet = "Venus"
+predict_event(question_house, planetary_positions, house_cusp_significations, current_dasha_planet, transiting_planets)
