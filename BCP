@@ -1,0 +1,81 @@
+#BCP Technique
+
+def calculate_bcp_house(age):
+    """
+    Calculate the BCP house based on the person's age.
+
+    Parameters:
+        age (int): The age of the person.
+
+    Returns:
+        int: The house number (1-12) corresponding to the age.
+    """
+    return ((age - 1) % 12) + 1
+
+def predict_bcp_events(age, house_significations, planetary_positions):
+    """
+    Predict significant events using the Bhrigu Chakra Paddhati (BCP) logic.
+
+    Parameters:
+        age (int): The age of the person.
+        house_significations (dict): Significations for each house (1-12).
+        planetary_positions (dict): Planetary placements in houses (e.g., {"Sun": 1, "Moon": 7}).
+
+    Returns:
+        dict: Predictions for the current age and associated house.
+    """
+    current_house = calculate_bcp_house(age)
+    house_events = house_significations.get(current_house, "No specific significations.")
+
+    # Check for planets influencing the current house
+    influencing_planets = [
+        planet for planet, house in planetary_positions.items() if house == current_house
+    ]
+
+    return {
+        "Age": age,
+        "House": current_house,
+        "House Significations": house_events,
+        "Influencing Planets": influencing_planets,
+        "Predictions": f"Significant events related to {house_events} might occur. Influencing planets: {', '.join(influencing_planets)}."
+    }
+
+# Example Usage
+if __name__ == "__main__":
+    # Age of the person
+    age = 35
+
+    # House significations
+    house_significations = {
+        1: "Self, health, personality",
+        2: "Family, wealth, speech",
+        3: "Siblings, courage, communication",
+        4: "Mother, home, happiness",
+        5: "Children, creativity, education",
+        6: "Enemies, health issues, service",
+        7: "Marriage, partnerships, public image",
+        8: "Longevity, transformation, occult",
+        9: "Luck, religion, long-distance travel",
+        10: "Career, status, reputation",
+        11: "Income, gains, friendships",
+        12: "Expenditure, losses, spirituality"
+    }
+
+    # Example planetary positions in houses
+    planetary_positions = {
+        "Sun": 10,  # Sun in 10th house
+        "Moon": 5,  # Moon in 5th house
+        "Mars": 3,  # Mars in 3rd house
+        "Jupiter": 1  # Jupiter in 1st house
+    }
+
+    # Predict BCP events
+    bcp_prediction = predict_bcp_events(age, house_significations, planetary_positions)
+
+    # Output
+    print("BCP Prediction:")
+    print(f"Age: {bcp_prediction['Age']}")
+    print(f"Current House: {bcp_prediction['House']}")
+    print(f"House Significations: {bcp_prediction['House Significations']}")
+    print(f"Influencing Planets: {', '.join(bcp_prediction['Influencing Planets'])}")
+    print(f"Predictions: {bcp_prediction['Predictions']}")
