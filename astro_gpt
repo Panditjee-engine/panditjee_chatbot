@@ -1,0 +1,467 @@
+#Astro_GPT_Analysis
+
+
+import swisseph as swe
+from datetime import datetime, timedelta
+import pytz
+from math import floor
+
+# Constants for divisional chart divisors
+DIVISIONAL_CHARTS = {
+    "D1": 1,  # Rashi Chart (Natal Chart)
+    "D2": 2,  # Hora Chart
+    "D3": 3,  # Drekkana Chart
+    "D4": 4,  # Chaturthamsa Chart
+    "D5": 5,  # Panchamsa Chart
+    "D6": 6,  # Shashtamsa Chart
+    "D7": 7,  # Saptamsa Chart
+    "D8": 8,  # Ashtamsa Chart
+    "D9": 9,  # Navamsa Chart
+    "D10": 10,  # Dasamsa Chart
+    "D11": 11,  # Rudramsa Chart
+    "D12": 12,  # Dvadasamsa Chart
+    "D16": 16,  # Shodashamsa Chart
+    "D20": 20,  # Vimsamsa Chart
+    "D24": 24,  # Siddhamsa Chart
+    "D27": 27,  # Nakshatramsa Chart
+    "D30": 30,  # Trimsamsa Chart
+    "D40": 40,  # Khavedamsa Chart
+    "D45": 45,  # Akshavedamsa Chart
+    "D60": 60   # Shashtiamsa Chart
+}
+
+# Constants for Panchang elements
+PANCHANG_ELEMENTS = {
+    "Tithi": ["Shukla Pratipada", "Shukla Dwitiya", "Shukla Tritiya", "Shukla Chaturthi", "Shukla Panchami",
+              "Shukla Shashthi", "Shukla Saptami", "Shukla Ashtami", "Shukla Navami", "Shukla Dashami",
+              "Shukla Ekadashi", "Shukla Dwadashi", "Shukla Trayodashi", "Shukla Chaturdashi", "Purnima",
+              "Krishna Pratipada", "Krishna Dwitiya", "Krishna Tritiya", "Krishna Chaturthi", "Krishna Panchami",
+              "Krishna Shashthi", "Krishna Saptami", "Krishna Ashtami", "Krishna Navami", "Krishna Dashami",
+              "Krishna Ekadashi", "Krishna Dwadashi", "Krishna Trayodashi", "Krishna Chaturdashi", "Amavasya"],
+    "Vaar": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+}
+
+# Constants for birth time rectification
+DEGREES_PER_MINUTE = 0.25  # Ascendant moves 1 degree every 4 minutes
+MINUTES_PER_DEGREE = 4     # Minutes it takes for the ascendant to move 1 degree
+
+# Placeholder for planetary combinations and interpretations
+PLANETARY_COMBINATIONS = {
+    "Raja Yoga": {
+        "Planets": ["Jupiter", "Moon"],
+        "Effect": "Kingly status, wealth, and success in life."
+    },
+    "Dhana Yoga": {
+        "Planets": ["Venus", "Mars"],
+        "Effect": "Wealth and material prosperity."
+    },
+    "Parivartana Yoga": {
+        "Planets": ["Saturn", "Mercury"],
+        "Effect": "Exchange of houses brings mutual support and unexpected benefits."
+    },
+    "Viparita Raja Yoga": {
+        "Planets": ["Sun", "Saturn"],
+        "Effect": "Success through overcoming challenges and enemies."
+    },
+    "Neecha Bhanga Raja Yoga": {
+        "Planets": ["Moon", "Jupiter"],
+        "Effect": "Cancellation of debilitation leads to immense success and wealth."
+    },
+    "Adhi Yoga": {
+        "Planets": ["Mercury", "Venus", "Jupiter"],
+        "Effect": "High status, mental clarity, and happiness."
+    },
+    "Saraswati Yoga": {
+        "Planets": ["Venus", "Jupiter", "Mercury"],
+        "Effect": "Intelligence, creativity, and prosperity."
+    },
+    "Kemadruma Yoga": {
+        "Planets": ["Moon"],
+        "Effect": "Isolation, lack of support, and struggles in life when Moon is unaspected."
+    },
+    "Chamara Yoga": {
+        "Planets": ["Moon", "Mercury"],
+        "Effect": "Good reputation, wealth, and respect."
+    },
+    "Lakshmi Yoga": {
+        "Planets": ["Venus", "Mars", "Jupiter"],
+        "Effect": "Prosperity, wealth, and happiness."
+    },
+    "Ruchaka Yoga": {
+        "Planets": ["Mars"],
+        "Effect": "Courage, strength, and success in fields requiring aggression and determination."
+    },
+    "Bhadra Yoga": {
+        "Planets": ["Mercury"],
+        "Effect": "Intelligence, sharp communication, and a pleasing personality."
+    },
+    "Hamsa Yoga": {
+        "Planets": ["Jupiter"],
+        "Effect": "Wisdom, prosperity, and a virtuous life."
+    },
+    "Malavya Yoga": {
+        "Planets": ["Venus"],
+        "Effect": "Luxuries, artistic talents, and a charming personality."
+    },
+    "Shasha Yoga": {
+        "Planets": ["Saturn"],
+        "Effect": "Leadership qualities, authority, and discipline."
+    }
+}
+
+# Nakshatra Details
+NAKSHATRA_DETAILS = {
+    "Ashwini": {"Ruler": "Ketu", "Degrees": [0, 13.333], "Characteristics": "Quick, intelligent, healing capabilities"},
+    "Bharani": {"Ruler": "Venus", "Degrees": [13.333, 26.666], "Characteristics": "Courageous, determined, strong"},
+    "Krittika": {"Ruler": "Sun", "Degrees": [26.666, 40.0], "Characteristics": "Sharp, dynamic, transformative"},
+    "Rohini": {"Ruler": "Moon", "Degrees": [40.0, 53.333], "Characteristics": "Creative, fertile, luxurious"},
+    "Mrigashira": {"Ruler": "Mars", "Degrees": [53.333, 66.666], "Characteristics": "Curious, searching, restless"},
+    "Ardra": {"Ruler": "Rahu", "Degrees": [66.666, 80.0], "Characteristics": "Intense, transformative, stormy"},
+    "Punarvasu": {"Ruler": "Jupiter", "Degrees": [80.0, 93.333], "Characteristics": "Nurturing, forgiving, restoring"},
+    "Pushya": {"Ruler": "Saturn", "Degrees": [93.333, 106.666], "Characteristics": "Nurturing, stable, traditional"},
+    "Ashlesha": {"Ruler": "Mercury", "Degrees": [106.666, 120.0], "Characteristics": "Mystical, intense, transformative"},
+    "Magha": {"Ruler": "Ketu", "Degrees": [120.0, 133.333], "Characteristics": "Regal, authoritative, traditional"},
+    "Purva Phalguni": {"Ruler": "Venus", "Degrees": [133.333, 146.666], "Characteristics": "Playful, creative, charming"},
+    "Uttara Phalguni": {"Ruler": "Sun", "Degrees": [146.666, 160.0], "Characteristics": "Generous, stable, supportive"},
+    "Hasta": {"Ruler": "Moon", "Degrees": [160.0, 173.333], "Characteristics": "Skillful, resourceful, clever"},
+    "Chitra": {"Ruler": "Mars", "Degrees": [173.333, 186.666], "Characteristics": "Beautiful, artistic, charismatic"},
+    "Swati": {"Ruler": "Rahu", "Degrees": [186.666, 200.0], "Characteristics": "Independent, flexible, adaptable"},
+    "Vishakha": {"Ruler": "Jupiter", "Degrees": [200.0, 213.333], "Characteristics": "Ambitious, determined, goal-oriented"},
+    "Anuradha": {"Ruler": "Saturn", "Degrees": [213.333, 226.666], "Characteristics": "Friendly, balanced, harmonious"},
+    "Jyeshtha": {"Ruler": "Mercury", "Degrees": [226.666, 240.0], "Characteristics": "Leader, authoritative, powerful"},
+    "Mula": {"Ruler": "Ketu", "Degrees": [240.0, 253.333], "Characteristics": "Deep, transformative, investigative"},
+    "Purva Ashadha": {"Ruler": "Venus", "Degrees": [253.333, 266.666], "Characteristics": "Invigorating, optimistic, confident"},
+    "Uttara Ashadha": {"Ruler": "Sun", "Degrees": [266.666, 280.0], "Characteristics": "Victorious, focused, determined"},
+    "Shravana": {"Ruler": "Moon", "Degrees": [280.0, 293.333], "Characteristics": "Listening, learning, disciplined"},
+    "Dhanishta": {"Ruler": "Mars", "Degrees": [293.333, 306.666], "Characteristics": "Rhythmic, resourceful, wealthy"},
+    "Shatabhisha": {"Ruler": "Rahu", "Degrees": [306.666, 320.0], "Characteristics": "Mysterious, healing, innovative"},
+    "Purva Bhadrapada": {"Ruler": "Jupiter", "Degrees": [320.0, 333.333], "Characteristics": "Intense, visionary, focused"},
+    "Uttara Bhadrapada": {"Ruler": "Saturn", "Degrees": [333.333, 346.666], "Characteristics": "Wise, stable, supportive"},
+    "Revati": {"Ruler": "Mercury", "Degrees": [346.666, 360.0], "Characteristics": "Protective, nurturing, prosperous"}
+}
+
+# Constants for Mahadasha periods in years
+DASHA_PERIODS = {
+    "Ketu": 7,
+    "Venus": 20,
+    "Sun": 6,
+    "Moon": 10,
+    "Mars": 7,
+    "Rahu": 18,
+    "Jupiter": 16,
+    "Saturn": 19,
+    "Mercury": 17
+}
+
+# Jaimini Astrology Specific Constants
+JAIMINI_KARAKAS = [
+    "Atma Karaka",  # Planet with the highest degree in a chart
+    "Amatya Karaka",  # Second highest degree
+    "Bhratri Karaka",  # Third highest degree
+    "Matri Karaka",  # Fourth highest degree
+    "Putra Karaka",  # Fifth highest degree
+    "Gnati Karaka",  # Sixth highest degree
+    "Dara Karaka"    # Seventh highest degree
+]
+
+# Function to convert local time to UT
+def convert_to_ut(local_datetime, timezone_str):
+    """
+    Convert local time to Universal Time (UT).
+
+    Parameters:
+        local_datetime (datetime): The local datetime.
+        timezone_str (str): The timezone string (e.g., 'Asia/Kolkata').
+
+    Returns:
+        datetime: The datetime in Universal Time (UT).
+    """
+    local_tz = pytz.timezone(timezone_str)
+    local_dt_with_tz = local_tz.localize(local_datetime)
+    ut_datetime = local_dt_with_tz.astimezone(pytz.utc)
+    return ut_datetime
+
+# Function to calculate Tithi
+def calculate_tithi(elongation):
+    """Determine Tithi based on the angular elongation between the Sun and Moon."""
+    index = floor(elongation / 12) % 30
+    tithi_name = PANCHANG_ELEMENTS["Tithi"][index]
+    return tithi_name
+
+# Function to generate Panchang for a given date
+def generate_panchang(date):
+    """Generate Panchang details for a specific date."""
+    # Placeholder values for Sun and Moon longitude
+    sun_longitude = (date.toordinal() * 0.9856) % 360
+    moon_longitude = (date.toordinal() * 13.1764) % 360
+    elongation = (moon_longitude - sun_longitude) % 360
+
+    tithi = calculate_tithi(elongation)
+    vaar = PANCHANG_ELEMENTS["Vaar"][date.weekday()]
+
+    panchang_data = {
+        "Date": date,
+        "Tithi": tithi,
+        "Vaar": vaar
+    }
+
+    return panchang_data
+
+# Function to calculate Lagna (Ascendant) placement
+def calculate_lagna(julian_day, latitude, longitude):
+    """
+    Calculate the Lagna (Ascendant) sign based on Julian day and geographic coordinates.
+
+    Parameters:
+        julian_day (float): The Julian day at the given location.
+        latitude (float): Latitude of the location (in degrees).
+        longitude (float): Longitude of the location (in degrees).
+
+    Returns:
+        str: The Rashi (zodiac sign) of the Lagna.
+    """
+    sidereal_time = swe.sidtime(julian_day)
+    degrees_per_hour = 15  # Each hour corresponds to 15 degrees
+    ascendant_degree = (sidereal_time * degrees_per_hour + longitude) % 360
+    rashi_index = int(ascendant_degree // 30)
+    rashis = [
+        "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+        "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"
+    ]
+    return rashis[rashi_index]
+
+# Function to generate divisional charts
+def generate_divisional_charts(planet_positions):
+    """
+    Generate divisional charts (D1 to D60) for a given set of planet positions.
+
+    Parameters:
+        planet_positions (dict): Dictionary of planetary degrees.
+
+    Returns:
+        dict: A dictionary containing divisional chart placements for each planet.
+    """
+    divisional_charts = {chart: {} for chart in DIVISIONAL_CHARTS.keys()}
+
+    for chart, divisor in DIVISIONAL_CHARTS.items():
+        for planet, degree in planet_positions.items():
+            divisional_charts[chart][planet] = calculate_divisional_chart(degree, divisor)
+
+    return divisional_charts
+
+# Function to calculate divisional chart placement
+def calculate_divisional_chart(planet_degree, divisor):
+    """
+    Calculate the divisional chart placement for a planet.
+
+    Parameters:
+        planet_degree (float): The degree of the planet in the Rashi (0-30).
+        divisor (int): The divisor for the divisional chart.
+
+    Returns:
+        int: The divisional placement (1 to divisor).
+    """
+    segment_size = 30 / divisor
+    divisional_position = int(planet_degree // segment_size) + 1
+    return divisional_position
+
+# Function to check for planetary yogas
+def determine_yogas(planetary_positions):
+    """Determine yogas based on planetary positions."""
+    yogas = []
+    for yoga_name, yoga_details in PLANETARY_COMBINATIONS.items():
+        planets = yoga_details["Planets"]
+        if all(planet in planetary_positions for planet in planets):
+            yogas.append({
+                "Yoga": yoga_name,
+                "Effect": yoga_details["Effect"]
+            })
+    return yogas
+
+# Function to validate Nakshatras
+def validate_nakshatra(planetary_positions):
+    """
+    Validate Nakshatra placements for the planets.
+
+    Parameters:
+        planetary_positions (dict): Dictionary of planetary positions.
+
+    Returns:
+        dict: Nakshatra placements for each planet.
+    """
+    nakshatras = {}
+    for planet, position in planetary_positions.items():
+        for nakshatra, details in NAKSHATRA_DETAILS.items():
+            start_degree, end_degree = details["Degrees"]
+            if start_degree <= position < end_degree:
+                nakshatras[planet] = {
+                    "Nakshatra": nakshatra,
+                    "Ruler": details["Ruler"],
+                    "Characteristics": details["Characteristics"]
+                }
+                break
+
+    return nakshatras
+
+# Function to calculate Mahadasha and Antardasha periods
+def calculate_dasha(planetary_positions, time_of_birth):
+    """
+    Calculate Mahadasha and Antardasha based on planetary positions.
+
+    Parameters:
+        planetary_positions (dict): Dictionary of planetary positions.
+        time_of_birth (datetime): Birth time.
+
+    Returns:
+        dict: Active Mahadasha and Antardasha.
+    """
+    # Placeholder logic
+    active_planet = max(planetary_positions, key=planetary_positions.get)  # Example logic
+    return {
+        "Mahadasha": active_planet,
+        "Antardasha": active_planet  # Simplified for demonstration
+    }
+
+# Function to rectify birth time based on events
+def rectify_birth_time(lagna_at_event, event_time, sunrise_time, latitude, longitude):
+    """
+    Adjust the birth time to match significant life events.
+
+    Parameters:
+        lagna_at_event (float): Known Lagna degree during a significant event.
+        event_time (datetime): Time of the significant event.
+        sunrise_time (datetime): Sunrise time on the day of the event.
+        latitude (float): Latitude of the place of birth.
+        longitude (float): Longitude of the place of birth.
+
+    Returns:
+        datetime: Adjusted birth time.
+    """
+    time_difference = (lagna_at_event / DEGREES_PER_MINUTE) * MINUTES_PER_DEGREE
+    birth_time = sunrise_time + timedelta(minutes=time_difference)
+    return birth_time
+
+# Function to calculate Jaimini Karakas (continued)
+def calculate_jaimini_karakas(planet_positions):
+    """
+    Calculate the Jaimini Karakas based on planetary positions.
+
+    Parameters:
+        planet_positions (dict): Dictionary of planetary positions in degrees (0-30).
+
+    Returns:
+        dict: A dictionary mapping Karaka names to planets.
+    """
+    sorted_planets = sorted(planet_positions.items(), key=lambda x: x[1], reverse=True)
+    karakas = {}
+    for i, (planet, _) in enumerate(sorted_planets):
+        if i < len(JAIMINI_KARAKAS):
+            karakas[JAIMINI_KARAKAS[i]] = planet
+        else:
+            break
+    return karakas
+
+# Function to calculate Arudha Lagna
+def calculate_arudha_lagna(lagna, house_positions):
+    """
+    Calculate the Arudha Lagna based on the Lagna and planetary house positions.
+
+    Parameters:
+        lagna (int): The house of the Ascendant (1-12).
+        house_positions (dict): Dictionary of houses and the planets placed in them.
+
+    Returns:
+        int: The house number of the Arudha Lagna.
+    """
+    # The lord of the Lagna determines the Arudha Lagna
+    lagna_lord = house_positions.get(lagna)
+    if not lagna_lord:
+        return None  # If Lagna lord is not determined
+
+    # The Arudha Lagna is calculated as:
+    lagna_lord_house = house_positions.get(lagna_lord, lagna)
+    arudha_lagna = (lagna_lord_house + lagna) % 12 or 12
+
+    # Arudha Lagna cannot fall in the 1st house (self)
+    if arudha_lagna == lagna:
+        arudha_lagna = (arudha_lagna + 4) % 12 or 12
+
+    return arudha_lagna
+
+# Main Execution for Testing
+if __name__ == "__main__":
+    # Example planetary positions in degrees
+    planetary_positions = {
+        "Sun": 10,
+        "Moon": 250,
+        "Mars": 40,
+        "Mercury": 120,
+        "Jupiter": 220,
+        "Venus": 300,
+        "Saturn": 180
+    }
+
+    # Example inputs for Lagna and house positions
+    lagna = 1  # Aries (1st house as Lagna)
+    house_positions = {
+        1: "Mars",   # Lord of Lagna
+        4: "Moon",   # Example placements
+        7: "Venus",
+        10: "Saturn"
+    }
+
+    # Test Functions
+    jaimini_karakas = calculate_jaimini_karakas(planetary_positions)
+    arudha_lagna = calculate_arudha_lagna(lagna, house_positions)
+
+    # Output Results
+    print("Jaimini Karakas:", jaimini_karakas)
+    print("Arudha Lagna:", arudha_lagna)
+### Basic Prashna Prediction Logic
+def generate_prashna_prediction(prashna_chart, question):
+    """
+    Generate predictions based on the Prashna chart and the nature of the question.
+
+    Parameters:
+        prashna_chart (dict): The generated Prashna chart.
+        question (str): The question asked.
+
+    Returns:
+        str: Prediction based on the Prashna chart.
+    """
+    lagna = prashna_chart["Lagna"]
+    planetary_positions = prashna_chart["Planetary Positions"]
+    yogas = prashna_chart["Yogas"]
+
+    # Example prediction logic
+    if "Moon" in planetary_positions and lagna in ["Cancer", "Taurus"]:
+        if "Kemadruma Yoga" in [yoga["Yoga"] for yoga in yogas]:
+            return f"Question: {question}\nPrediction: Challenges are expected, but clarity will come after delays."
+        return f"Question: {question}\nPrediction: Positive outcomes are likely, especially in emotional or personal matters."
+
+    if "Mars" in planetary_positions and lagna in ["Aries", "Scorpio"]:
+        return f"Question: {question}\nPrediction: Strong results with determination and effort. Be cautious of aggression."
+
+    if "Saturn" in planetary_positions and lagna in ["Capricorn", "Aquarius"]:
+        return f"Question: {question}\nPrediction: Results will be slow but steady. Patience is key."
+
+    # Default fallback prediction
+    return f"Question: {question}\nPrediction: Detailed analysis is required. Consult a deeper astrological interpretation."
+
+### Example Usage for Prashna Logic
+if __name__ == "__main__":
+    # Inputs
+    question = "Will I get a promotion this year?"
+    question_time = datetime.now()
+    latitude = 28.6139  # Example: Delhi, India
+    longitude = 77.2090
+
+    # Generate Prashna Chart
+    prashna_chart = generate_prashna_chart(question_time, latitude, longitude)
+
+    # Generate Prediction
+    prediction = generate_prashna_prediction(prashna_chart, question)
+
+    # Output
+    print("Prashna Chart:", prashna_chart)
+    print("Prediction:", prediction)
