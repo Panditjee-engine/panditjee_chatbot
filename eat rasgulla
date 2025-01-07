@@ -1,0 +1,49 @@
+def evaluate_astrology_rules(prashna_chart):
+    """
+    Evaluate astrology rules based on planetary positions and provide remedies.
+
+    Parameters:
+        prashna_chart (dict): The astrological chart data.
+
+    Returns:
+        list: A list of remedies or actions based on the astrological rules.
+    """
+    remedies = []
+    planetary_positions = prashna_chart["Planetary Positions"]
+
+    # Rule 1: 5 planets in the 9th house, including Rahu & Ketu
+    ninth_house_planets = [planet for planet, position in planetary_positions.items() if position == "9th House"]
+    if len(ninth_house_planets) >= 5 and ("Rahu" in ninth_house_planets or "Ketu" in ninth_house_planets):
+        remedies.append(
+            "To enhance stock market profits in odd years, eat rasgulla, drink til (sesame) milk, and offer food to blind people."
+        )
+
+    # Rule 2: Jupiter and Sun together
+    if "Jupiter" in planetary_positions and "Sun" in planetary_positions:
+        jupiter_position = planetary_positions["Jupiter"]
+        sun_position = planetary_positions["Sun"]
+        if jupiter_position == sun_position:
+            remedies.append(
+                "If Jupiter and Sun are together, avoid accepting gifts from others and offer sweets at a temple for prosperity."
+            )
+
+    # Rule 3: Mars and Mercury together
+    if "Mars" in planetary_positions and "Mercury" in planetary_positions:
+        mars_position = planetary_positions["Mars"]
+        mercury_position = planetary_positions["Mercury"]
+        if mars_position == mercury_position:
+            remedies.append(
+                "If Mars and Mercury are together in the chart, you may find a Durga statue with a lion's mouth open in your home. Donate it to a temple for positive energy."
+            )
+
+    # Rule 4: Sun and Moon together
+    if "Sun" in planetary_positions and "Moon" in planetary_positions:
+        sun_position = planetary_positions["Sun"]
+        moon_position = planetary_positions["Moon"]
+        if sun_position == moon_position:
+            remedies.append(
+                "If Sun and Moon are together in the chart, you may find a chariot picture in your home. "
+                "This symbolizes blessings from Maa Lakshmi. You have the potential to grow significantly if you work on the right path."
+            )
+
+    return remedies
