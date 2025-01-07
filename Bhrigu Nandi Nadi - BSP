@@ -1,0 +1,209 @@
+# Example data for natal chart (degrees of planets in zodiac signs)
+natal_chart = {
+    "Moon": {"degree": 240.5, "sign": "Sagittarius", "house": 9},
+    "Rahu": {"degree": 84.3, "sign": "Gemini", "house": 3},
+    "Sun": {"degree": 25.4, "sign": "Leo", "house": 1},
+    "Mars": {"degree": 93.2, "sign": "Cancer", "house": 2},
+    "Mercury": {"degree": 190.5, "sign": "Libra", "house": 7},
+    "Jupiter": {"degree": 78.0, "sign": "Gemini", "house": 3},
+    "Venus": {"degree": 165.3, "sign": "Virgo", "house": 6},
+    "Saturn": {"degree": 298.1, "sign": "Capricorn", "house": 10},
+}
+
+# Example data for transiting planets
+transiting_planets = {
+    "Saturn": {"degree": 245.0, "sign": "Sagittarius"},
+    "Jupiter": {"degree": 75.0, "sign": "Gemini"},
+    "Mars": {"degree": 95.0, "sign": "Cancer"},
+    "Venus": {"degree": 168.0, "sign": "Virgo"},
+}
+
+# Trigger points for each planet (example values; can be extended)
+trigger_degrees = {
+    "Sun": [3, 6, 9, 12, 15],
+    "Moon": [4, 8, 12, 16, 20],
+    "Mars": [5, 10, 15, 20],
+    "Mercury": [7, 14, 21],
+    "Jupiter": [12, 24, 36],
+    "Venus": [6, 12, 18],
+    "Saturn": [30, 60, 90]
+}
+
+# Vimshottari Dasha periods (example data; real periods must be calculated)
+vimshottari_dasha = {
+    "current_mahaplanet": "Saturn",
+    "current_antardasha": "Venus",
+    "current_pratyantardasha": "Mars"
+}
+
+# Orb settings (in degrees)
+aspect_orb = 5
+
+# Function to calculate Bhrigu Bindu
+def calculate_bhrigu_bindu(natal_chart):
+    moon_degree = natal_chart["Moon"]["degree"]
+    rahu_degree = natal_chart["Rahu"]["degree"]
+    bhrigu_bindu = (moon_degree + rahu_degree) / 2
+    if bhrigu_bindu > 360:
+        bhrigu_bindu -= 360
+    return bhrigu_bindu
+
+# Function to find natal triggers
+def check_triggers(natal_chart, trigger_degrees, bhrigu_bindu):
+    triggers = []
+    for planet, data in natal_chart.items():
+        planet_degree = data["degree"]
+        sign = data["sign"]
+        house = data["house"]
+        for trigger_point in trigger_degrees.get(planet, []):
+            if abs(planet_degree - bhrigu_bindu) <= trigger_point:
+                triggers.append({
+                    "Planet": planet,
+                    "Degree": planet_degree,
+                    "Sign": sign,
+                    "House": house,
+                    "Trigger Point": trigger_point,
+                    "Impact": f"Activates {sign} (House {house})"
+                })
+    return triggers
+
+# Function to analyze aspects
+def analyze_aspects(natal_chart, bhrigu_bindu, orb):
+    aspects = []
+    for planet, data in natal_chart.items():
+        planet_degree = data["degree"]
+        sign = data["sign"]
+        house = data["house"]
+        if abs(planet_degree - bhrigu_bindu) <= orb:
+            aspects.append({
+                "Planet": planet,
+                "Degree": planet_degree,
+                "Sign": sign,
+                "House": house,
+                "Aspect Type": "Direct Influence",
+                "Impact": f"Aspects Bhrigu Bindu (House {house})"
+            })
+    return aspects
+
+# Function to analyze transits
+def analyze_transits(transiting_planets, natal_chart, bhrigu_bindu, orb):
+    transits = []
+    for planet, data in transiting_planets.items():
+        transit_degree = data["degree"]
+        transit_sign = data["sign"]
+        for natal_planet, natal_data in natal_chart.items():
+            natal_degree = natal_data["degree"]
+            natal_sign = natal_data["sign"]
+            natal_house = natal_data["house"]
+            if abs(transit_degree - natal_degree) <= orb:
+                transits.append({
+                    "Transiting Planet": planet,
+                    "Natal Planet": natal_planet,
+                    "Natal Degree": natal_degree,
+                    "Natal House": natal_house,
+                    "Impact": f"Transit of {planet} affects {natal_planet} in {natal_sign} (House {natal_house})"
+                })
+            if abs(transit_degree - bhrigu_bindu) <= orb:
+                transits.append({
+                    "Transiting Planet": planet,
+                    "Natal Degree": bhrigu_bindu,
+                    "Impact": f"Transit of {planet} directly influences the Bhrigu Bindu"
+                })
+    return transits
+
+# Function to combine triggers with Vimshottari Dasha
+def combine_with_dasha(triggers, dasha_info):
+    enhanced_triggers = []
+    for trigger in triggers:
+        if trigger["Planet"] in dasha_info.values():
+            trigger["Dasha Influence"] = f"Enhanced by {trigger['Planet']} Dasha"
+        else:
+            trigger["Dasha Influence"] = "No Dasha Influence"
+        enhanced_triggers.append(trigger)
+    return enhanced_triggers
+
+# Event categorization based on houses
+def categorize_events(triggers):
+    event_categories = {"Personal": [], "Professional": []}
+    for trigger in triggers:
+        house = trigger["House"]
+        if house in [1, 4, 7, 12]:  # Personal houses
+            event_categories["Personal"].append(trigger)
+        elif house in [2, 6, 10, 11]:  # Professional houses
+            event_categories["Professional"].append(trigger)
+    return event_categories
+
+# Generate predictions based on triggers and categories
+def generate_predictions(event_categories):
+    predictions = {"Personal": [], "Professional": []}
+
+    # Personal Events Predictions
+    for event in event_categories["Personal"]:
+        house = event["House"]
+        planet = event["Planet"]
+        if house == 1:
+            predictions["Personal"].append(f"{planet} activates House 1: Focus on self-growth, health, and personality.")
+        elif house == 4:
+            predictions["Personal"].append(f"{planet} activates House 4: Changes related to home, mother, or emotional stability.")
+        elif house == 7:
+            predictions["Personal"].append(f"{planet} activates House 7: Marriage, partnerships, or public interactions may see activity.")
+        elif house == 12:
+            predictions["Personal"].append(f"{planet} activates House 12: Spiritual growth, foreign travel, or introspection is likely.")
+
+    # Professional Events Predictions
+    for event in event_categories["Professional"]:
+        house = event["House"]
+        planet = event["Planet"]
+        if house == 2:
+            predictions["Professional"].append(f"{planet} activates House 2: Financial gains, family matters, or speech-related work may flourish.")
+        elif house == 6:
+            predictions["Professional"].append(f"{planet} activates House 6: Focus on overcoming obstacles, health issues, or service-related work.")
+        elif house == 10:
+            predictions["Professional"].append(f"{planet} activates House 10: Career growth, leadership roles, or recognition is on the horizon.")
+        elif house == 11:
+            predictions["Professional"].append(f"{planet} activates House 11: Gains, networking, and fulfillment of desires are prominent.")
+
+    return predictions
+
+# Example usage
+bhrigu_bindu = calculate_bhrigu_bindu(natal_chart)
+triggers = check_triggers(natal_chart, trigger_degrees, bhrigu_bindu)
+aspects = analyze_aspects(natal_chart, bhrigu_bindu, aspect_orb)
+transits = analyze_transits(transiting_planets, natal_chart, bhrigu_bindu, aspect_orb)
+enhanced_triggers = combine_with_dasha(triggers, vimshottari_dasha)
+event_categories = categorize_events(enhanced_triggers)
+predictions = generate_predictions(event_categories)
+
+# Output the results
+print(f"Bhrigu Bindu: {bhrigu_bindu}°\n")
+print("Natal Chart Triggers:")
+for trigger in triggers:
+    print(trigger)
+
+print("\nAspect Analysis:")
+for aspect in aspects:
+    print(aspect)
+
+print("\nTransit Analysis:")
+for transit in transits:
+    print(transit)
+
+print("\nEnhanced Triggers with Dasha Influence:")
+for trigger in enhanced_triggers:
+    print(trigger)
+
+print("\nEvent Categorization:")
+print("Personal Events:")
+for event in event_categories["Personal"]:
+    print(event)
+print("Professional Events:")
+for event in event_categories["Professional"]:
+    print(event)
+
+print("\nPredictions:")
+print("Personal Events:")
+for prediction in predictions["Personal"]:
+    print(f"- {prediction}")
+print("Professional Events:")
+for prediction in predictions["Professional"]:
+    print(f"- {prediction}")
