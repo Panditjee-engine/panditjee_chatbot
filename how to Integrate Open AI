@@ -1,0 +1,174 @@
+import openai
+from datetime import datetime
+from geopy.geocoders import Nominatim  # Library to fetch latitude and longitude
+import pytz
+
+# Set your OpenAI API Key
+OPENAI_API_KEY = "YOUR_OPENAI_API_KEY"
+openai.api_key = OPENAI_API_KEY
+
+# Geolocator for location-based latitude/longitude retrieval
+geolocator = Nominatim(user_agent="astro_gpt")
+
+def get_coordinates(location_name):
+    """
+    Get latitude and longitude for a given location name.
+
+    Parameters:
+        location_name (str): Name of the location (e.g., 'Delhi').
+
+    Returns:
+        tuple: (latitude, longitude) if found, else raises an exception.
+    """
+    try:
+        location = geolocator.geocode(location_name)
+        if location:
+            return location.latitude, location.longitude
+        else:
+            raise ValueError(f"Location '{location_name}' not found.")
+    except Exception as e:
+        raise ValueError(f"Error fetching coordinates: {e}")
+
+def get_question_time():
+    """
+    Prompt the user to enter the date and time of their question.
+    If no input is provided, use the current date and time.
+
+    Returns:
+        datetime: The date and time for the Prashna chart.
+    """
+    user_input = input("Enter the date and time for the question (YYYY-MM-DD HH:MM) or press Enter to use current time: ")
+    if user_input.strip():
+        try:
+            # Convert the user's input to a datetime object
+            question_time = datetime.strptime(user_input, "%Y-%m-%d %H:%M")
+            return question_time
+        except ValueError:
+            print("Invalid format. Using current date and time instead.")
+    # Fallback to current time
+    return datetime.now()
+
+def query_gpt(prompt):
+    """
+    Send a query to OpenAI's GPT model and get the response.
+
+    Parameters:
+        prompt (str): The input prompt for GPT.
+
+    Returns:
+        str: The GPT-generated response.
+    """
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4",  # Use "gpt-3.5-turbo" if GPT-4 is unavailable
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            max_tokens=500
+        )
+        return response["choices"][0]["message"]["content"]
+    except Exception as e:
+        return f"Error communicating with OpenAI: {e}"
+
+def generate_gpt_prediction(chart_data, question):
+    """
+    Use GPT to generate a prediction based on the chart data and user's question.
+
+    Parameters:
+        chart_data (dict): The astrological chart data.
+        question (str): The user's question.
+
+    Returns:
+        str: GPT-generated prediction.
+    """
+    prompt = f"""
+    Below is the astrological chart data and a user's question.
+    
+    Chart Data:
+    - Lagna: {chart_data['Lagna']}
+    - Planetary Positions: {chart_data['Planetary Positions']}
+    - Yogas: {chart_data['Yogas']}
+    
+    Question: {question}
+    
+    Based on Vedic astrology principles, generate a detailed prediction for the question.
+    """
+    return query_gpt(prompt)
+
+def generate_prashna_chart(question_time, latitude, longitude):
+    """
+    Generate a Prashna chart for the given question time and location.
+
+    Parameters:
+        question_time (datetime): The time of the question.
+        latitude (float): The latitude of the location.
+        longitude (float): The longitude of the location.
+
+    Returns:
+        dict: A simplified Prashna chart.
+    """
+    # Example calculation (replace with actual astrological logic)
+    lagna = "Aries"
+    planetary_positions = {
+        "Sun": "Leo",
+        "Moon": "Cancer",
+        "Mars": "Scorpio",
+        "Mercury": "Virgo",
+        "Jupiter": "Sagittarius",
+        "Venus": "Libra",
+        "Saturn": "Capricorn"
+    }
+    yogas = [
+        {"Yoga": "Raja Yoga", "Effect": "Kingly status, wealth, and success."},
+        {"Yoga": "Dhana Yoga", "Effect": "Wealth and material prosperity."}
+    ]
+    return {
+        "Lagna": lagna,
+        "Planetary Positions": planetary_positions,
+        "Yogas": yogas
+    }
+
+def main():
+    """
+    Main function to simulate user interaction with Astro_GPT.
+    """
+    # Ask user for their question
+    question = input("Enter your question: ")
+    
+    # Ask user for their location
+    location_name = input("Enter your location (e.g., 'Delhi'): ")
+    try:
+        latitude, longitude = get_coordinates(location_name)
+    except ValueError as e:
+        print(e)
+        return
+    
+    # Ask user for date and time of the question
+    question_time = get_question_time()
+
+    print(f"Location coordinates: Latitude={latitude}, Longitude={longitude}")
+    print(f"Question Time: {question_time}")
+    print("Generating Prashna chart...")
+    
+    # Generate Prashna chart
+    prashna_chart = generate_prashna_chart(question_time, latitude, longitude)
+    
+    # Generate prediction using GPT
+    print("Analyzing chart and generating prediction with GPT...")
+    prediction = generate_gpt_prediction(prashna_chart, question)
+    
+    # Output results
+    print("\n--- Prashna Chart ---")
+    print(f"Lagna: {prashna_chart['Lagna']}")
+    print("Planetary Positions:")
+    for planet, position in prashna_chart["Planetary Positions"].items():
+        print(f"  {planet}: {position}")
+    print("Yogas:")
+    for yoga in prashna_chart["Yogas"]:
+        print(f"  {yoga['Yoga']}: {yoga['Effect']}")
+    
+    print("\n--- Prediction ---")
+    print(prediction)
+
+# Run the program
+if __name__ == "__main__":
+    main()
