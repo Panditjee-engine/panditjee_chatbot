@@ -58,6 +58,29 @@ def get_personalized_transit_analysis(birth_date, birth_time, birth_place, plane
     )
     return response["choices"][0]["message"]["content"].strip()
 
+def get_transit_based_remedies(birth_date, birth_time, birth_place, planetary_positions, planetary_transits):
+    formatted_prompt = f"""
+    You are an expert Vedic astrologer. Based on the user's birth chart and current planetary transits, suggest remedial measures to mitigate negative influences and enhance positive outcomes.
+    Date of Birth: {birth_date}
+    Time of Birth: {birth_time}
+    Place of Birth: {birth_place}
+    Natal Planetary Positions: {planetary_positions}
+    Current Transits: {planetary_transits}
+    Suggest practical remedies such as:
+    - Gemstones
+    - Mantras and Chants
+    - Fasting recommendations
+    - Charity and Donations
+    - Rituals and Puja
+    Provide specific and customized remedies according to Vedic astrology principles.
+    """
+    
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[{"role": "system", "content": formatted_prompt}]
+    )
+    return response["choices"][0]["message"]["content"].strip()
+
 def get_monthly_yearly_transit_report(birth_date, birth_time, birth_place, planetary_positions, period="monthly"):
     planetary_transits = get_planetary_transits(period)
     formatted_prompt = f"""
@@ -93,6 +116,7 @@ def astrology_api():
     planetary_transits = get_planetary_transits()
     transit_alerts = get_transit_alerts(planetary_transits, planetary_positions, user_preferences)
     personalized_transit_analysis = get_personalized_transit_analysis(birth_date, birth_time, birth_place, planetary_positions, planetary_transits)
+    transit_remedies = get_transit_based_remedies(birth_date, birth_time, birth_place, planetary_positions, planetary_transits)
     transit_report = get_monthly_yearly_transit_report(birth_date, birth_time, birth_place, planetary_positions, period)
     
     response_data = {
@@ -100,7 +124,8 @@ def astrology_api():
         "planetary_transits": planetary_transits,
         "transit_alerts": transit_alerts,
         "personalized_transit_analysis": personalized_transit_analysis,
-        "transit_report": transit_report
+        "transit_report": transit_report,
+        "transit_remedies": transit_remedies
     }
     return jsonify(response_data)
 
