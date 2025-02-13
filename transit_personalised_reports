@@ -1,0 +1,133 @@
+from flask import Flask, request, jsonify
+import openai
+import requests
+import matplotlib.pyplot as plt
+import io
+import base64
+from datetime import datetime
+
+app = Flask(__name__)
+
+# Set OpenAI API Key
+openai.api_key = "YOUR_OPENAI_API_KEY"
+
+# Panchang API Configuration
+PANCHANG_API_URL = "https://api.example.com/panchang"
+PANCHANG_API_KEY = "YOUR_PANCHANG_API_KEY"
+
+# Ephemeris API Configuration for sunrise time, planetary positions, and divisional charts
+EPHEMERIS_API_URL = "https://api.example.com/ephemeris"
+EPHEMERIS_API_KEY = "YOUR_EPHEMERIS_API_KEY"
+
+def get_planetary_transits(period="monthly"):
+    params = {"api_key": EPHEMERIS_API_KEY, "period": period}
+    response = requests.get(f"{EPHEMERIS_API_URL}/transits", params=params)
+    if response.status_code == 200:
+        return response.json().get("planetary_transits", {})
+    return {"error": "Unable to fetch planetary transits"}
+
+def get_transit_alerts(planetary_transits, planetary_positions, user_preferences=None):
+    alerts = []
+    important_events = user_preferences.get("important_events", ["Retrograde", "Eclipse", "Major Sign Change"])
+    for planet, transit_info in planetary_transits.items():
+        natal_position = planetary_positions.get(planet, {}).get("sign")
+        transit_position = transit_info.get("sign")
+        event_type = transit_info.get("event_type")
+        
+        if natal_position and transit_position and natal_position != transit_position:
+            alerts.append(f"{planet} has moved from {natal_position} to {transit_position}, which may influence {transit_info['effects']}")
+        
+        if event_type in important_events:
+            alerts.append(f"Alert: {planet} is undergoing {event_type}, which may have significant effects.")
+    return alerts
+
+def get_personalized_transit_analysis(birth_date, birth_time, birth_place, planetary_positions, planetary_transits):
+    formatted_prompt = f"""
+    You are an expert Vedic astrologer. Analyze the impact of the current planetary transits on the user's birth chart.
+    Date of Birth: {birth_date}
+    Time of Birth: {birth_time}
+    Place of Birth: {birth_place}
+    Natal Planetary Positions: {planetary_positions}
+    Current Transits: {planetary_transits}
+    Provide a detailed explanation of the effects on different aspects of life such as career, relationships, health, and personal growth.
+    """
+    
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[{"role": "system", "content": formatted_prompt}]
+    )
+    return response["choices"][0]["message"]["content"].strip()
+
+def get_transit_based_remedies(birth_date, birth_time, birth_place, planetary_positions, planetary_transits):
+    formatted_prompt = f"""
+    You are an expert Vedic astrologer. Based on the user's birth chart and current planetary transits, suggest remedial measures to mitigate negative influences and enhance positive outcomes.
+    Date of Birth: {birth_date}
+    Time of Birth: {birth_time}
+    Place of Birth: {birth_place}
+    Natal Planetary Positions: {planetary_positions}
+    Current Transits: {planetary_transits}
+    Suggest practical remedies such as:
+    - Gemstones
+    - Mantras and Chants
+    - Fasting recommendations
+    - Charity and Donations
+    - Rituals and Puja
+    Provide specific and customized remedies according to Vedic astrology principles.
+    """
+    
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[{"role": "system", "content": formatted_prompt}]
+    )
+    return response["choices"][0]["message"]["content"].strip()
+
+def get_monthly_yearly_transit_report(birth_date, birth_time, birth_place, planetary_positions, period="monthly"):
+    planetary_transits = get_planetary_transits(period)
+    formatted_prompt = f"""
+    You are an expert Vedic astrologer. Provide a detailed {period} transit report for the native based on their birth chart and current planetary movements.
+    Date of Birth: {birth_date}
+    Time of Birth: {birth_time}
+    Place of Birth: {birth_place}
+    Natal Planetary Positions: {planetary_positions}
+    Upcoming Transits: {planetary_transits}
+    Include predictions for career, relationships, health, and finance, along with remedial suggestions.
+    """
+    
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[{"role": "system", "content": formatted_prompt}]
+    )
+    return response["choices"][0]["message"]["content"].strip()
+
+@app.route('/astrology', methods=['POST'])
+def astrology_api():
+    data = request.json
+    birth_date = data.get('birth_date')
+    birth_time = data.get('birth_time')
+    birth_place = data.get('birth_place')
+    query = data.get('query')
+    period = data.get('period', "monthly")
+    user_preferences = data.get('user_preferences', {})
+    
+    if not all([birth_date, birth_time, birth_place, query]):
+        return jsonify({"error": "Missing required parameters"}), 400
+    
+    planetary_positions = get_planetary_positions(birth_date, birth_place)
+    planetary_transits = get_planetary_transits()
+    transit_alerts = get_transit_alerts(planetary_transits, planetary_positions, user_preferences)
+    personalized_transit_analysis = get_personalized_transit_analysis(birth_date, birth_time, birth_place, planetary_positions, planetary_transits)
+    transit_remedies = get_transit_based_remedies(birth_date, birth_time, birth_place, planetary_positions, planetary_transits)
+    transit_report = get_monthly_yearly_transit_report(birth_date, birth_time, birth_place, planetary_positions, period)
+    
+    response_data = {
+        "planetary_positions": planetary_positions,
+        "planetary_transits": planetary_transits,
+        "transit_alerts": transit_alerts,
+        "personalized_transit_analysis": personalized_transit_analysis,
+        "transit_report": transit_report,
+        "transit_remedies": transit_remedies
+    }
+    return jsonify(response_data)
+
+if __name__ == '__main__':
+    app.run(debug=True)
