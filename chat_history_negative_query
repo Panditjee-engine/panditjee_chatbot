@@ -1,0 +1,136 @@
+
+# Store user chat history
+user_chat_history = {}
+
+def get_sunrise_time(birth_date, birth_place):
+    params = {
+        "date": birth_date,
+        "location": birth_place,
+        "api_key": EPHEMERIS_API_KEY
+    }
+    response = requests.get(EPHEMERIS_API_URL, params=params)
+    if response.status_code == 200:
+        return response.json().get("sunrise_time", "06:00")  # Default to 06:00 if not found
+    return "06:00"
+
+def handle_negative_queries(query):
+    negative_keywords = ["bad", "failure", "weak", "unlucky", "hopeless", "problem", "useless", "worst", "hate", "depressed", "lost", "incapable", "stupid", "unsuccessful", "wasted", "pointless", "pain", "suffering", "wrong"]
+    for word in negative_keywords:
+        if word in query.lower():
+            return "Everyone possesses unique strengths and talents. Life’s challenges arise due to past karma and the residual effects of our actions. To transform our destiny (Prarabdha), we must acknowledge our past, take corrective actions, and strive to improve our karma. Self-improvement and positive efforts can shape a more fulfilling future, aligning with astrological insights for guidance."
+    return None
+
+def get_personalized_response(user_id, query):
+    chat_history = user_chat_history.get(user_id, [])
+    if chat_history:
+        formatted_prompt = f"""
+        You are an expert Vedic astrologer. Based on the user's past interactions, provide a personalized response for their current query.
+        User ID: {user_id}
+        Chat History: {chat_history}
+        Current Query: {query}
+        """
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[{"role": "system", "content": formatted_prompt}]
+        )
+        return response["choices"][0]["message"]["content"].strip()
+    return None
+
+def get_planetary_positions(birth_date, birth_place):
+    params = {
+        "date": birth_date,
+        "location": birth_place,
+        "api_key": EPHEMERIS_API_KEY
+    }
+    response = requests.get(EPHEMERIS_API_URL, params=params)
+    if response.status_code == 200:
+        return response.json().get("planetary_positions", {})
+    return {"error": "Unable to fetch planetary positions"}
+
+def get_divisional_charts(birth_date, birth_time, birth_place):
+    params = {
+        "date": birth_date,
+        "time": birth_time,
+        "location": birth_place,
+        "api_key": EPHEMERIS_API_KEY
+    }
+    response = requests.get(EPHEMERIS_API_URL, params=params)
+    if response.status_code == 200:
+        return response.json().get("divisional_charts", {})
+    return {"error": "Unable to fetch divisional charts"}
+
+def get_panchang_data(birth_date, birth_place):
+    params = {
+        "date": birth_date,
+        "location": birth_place,
+        "api_key": PANCHANG_API_KEY
+    }
+    response = requests.get(PANCHANG_API_URL, params=params)
+    if response.status_code == 200:
+        raw_data = response.json()
+        return {
+            "tithi": raw_data.get("tithi", "Unknown"),
+            "nakshatra": raw_data.get("nakshatra", "Unknown"),
+            "yoga": raw_data.get("yoga", "Unknown"),
+            "karana": raw_data.get("karana", "Unknown"),
+            "sunrise": raw_data.get("sunrise", "Unknown"),
+            "sunset": raw_data.get("sunset", "Unknown")
+        }
+    return {"error": "Unable to fetch Panchang data"}
+
+def store_chat_history(user_id, user_message, bot_response):
+    if user_id not in user_chat_history:
+        user_chat_history[user_id] = []
+    user_chat_history[user_id].append({"user": user_message, "bot": bot_response})
+
+def get_chat_context(user_id):
+    return user_chat_history.get(user_id, [])
+
+@app.route('/astrology', methods=['POST'])
+def astrology_api():
+    data = request.json
+    user_id = data.get('user_id')
+    birth_date = data.get('birth_date')
+    birth_time = data.get('birth_time')
+    birth_place = data.get('birth_place')
+    query = data.get('query')
+    selected_number = data.get('selected_number')
+    
+    if query and query.lower() in ["what is today's date?", "what is today's date", "today's date"]:
+        return jsonify({"today_date": datetime.now().strftime("%Y-%m-%d")})
+    
+    positive_response = handle_negative_queries(query)
+    if positive_response:
+        store_chat_history(user_id, query, positive_response)
+        return jsonify({"message": positive_response})
+    
+    personalized_response = get_personalized_response(user_id, query)
+    if personalized_response:
+        store_chat_history(user_id, query, personalized_response)
+        return jsonify({"message": personalized_response})
+    
+    if not all([user_id, birth_date, birth_time, birth_place, query]):
+        return jsonify({"error": "Missing required parameters"}), 400
+    
+    chat_context = get_chat_context(user_id)
+    
+    panchang_data = get_panchang_data(birth_date, birth_place)
+    lagna_data = calculate_lagna(birth_date, birth_time, birth_place)
+    planetary_positions = get_planetary_positions(birth_date, birth_place)
+    divisional_charts = get_divisional_charts(birth_date, birth_time, birth_place)
+    prashna_kundli = get_prashna_kundli(selected_number) if selected_number else None
+    
+    response_data = {
+        "panchang_data": panchang_data,
+        "lagna_data": lagna_data,
+        "planetary_positions": planetary_positions,
+        "divisional_charts": divisional_charts,
+        "prashna_kundli": prashna_kundli,
+        "chat_context": chat_context
+    }
+    
+    store_chat_history(user_id, query, response_data)
+    return jsonify(response_data)
+
+if __name__ == '__main__':
+    app.run(debug=True)
