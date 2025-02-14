@@ -1,0 +1,36 @@
+def calculate_karma_score(planetary_positions):
+    karma_score = 0
+    karmic_factors = {
+        "Saturn": -2, "Rahu": -3, "Ketu": -3, "Jupiter": 2, "Venus": 1,
+        "Mars": -1, "Mercury": 1, "Sun": 0, "Moon": 0
+    }
+    for planet, position in planetary_positions.items():
+        karma_score += karmic_factors.get(planet, 0)
+    return karma_score
+
+def suggest_karmic_remedies(karma_score):
+    if karma_score < -5:
+        return "Engage in selfless service (Seva), recite Hanuman Chalisa, and donate food to the needy."
+    elif karma_score < 0:
+        return "Practice meditation, chant 'Om Namah Shivaya', and avoid negative speech."
+    elif karma_score > 5:
+        return "Your karma is strong. Maintain positivity and continue spiritual practices."
+    return "Balance your karma with acts of kindness, gratitude, and patience."
+
+@app.route('/karma_analysis', methods=['POST'])
+def karma_analysis():
+    data = request.json
+    birth_date = data.get('birth_date')
+    birth_place = data.get('birth_place')
+    planetary_positions = get_planetary_positions(birth_date, birth_place)
+    
+    if "error" in planetary_positions:
+        return jsonify({"error": "Unable to fetch planetary positions"})
+    
+    karma_score = calculate_karma_score(planetary_positions)
+    karmic_remedies = suggest_karmic_remedies(karma_score)
+    
+    return jsonify({
+        "karma_score": karma_score,
+        "remedial_suggestions": karmic_remedies
+    })
