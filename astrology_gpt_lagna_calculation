@@ -1,0 +1,163 @@
+from flask import Flask, request, jsonify
+import openai
+import requests
+import matplotlib.pyplot as plt
+import io
+import base64
+from datetime import datetime
+
+app = Flask(__name__)
+
+# Set OpenAI API Key
+openai.api_key = "YOUR_OPENAI_API_KEY"
+
+# Panchang API Configuration
+PANCHANG_API_URL = "https://api.example.com/panchang"
+PANCHANG_API_KEY = "YOUR_PANCHANG_API_KEY"
+
+# Ephemeris API Configuration for sunrise time, planetary positions, and divisional charts
+EPHEMERIS_API_URL = "https://api.example.com/ephemeris"
+EPHEMERIS_API_KEY = "YOUR_EPHEMERIS_API_KEY"
+
+def get_sunrise_time(birth_date, birth_place):
+    params = {
+        "date": birth_date,
+        "location": birth_place,
+        "api_key": EPHEMERIS_API_KEY
+    }
+    response = requests.get(EPHEMERIS_API_URL, params=params)
+    if response.status_code == 200:
+        return response.json().get("sunrise_time", "06:00")  # Default to 06:00 if not found
+    return "06:00"
+
+def get_planetary_positions(birth_date, birth_place):
+    params = {
+        "date": birth_date,
+        "location": birth_place,
+        "api_key": EPHEMERIS_API_KEY
+    }
+    response = requests.get(EPHEMERIS_API_URL, params=params)
+    if response.status_code == 200:
+        return response.json().get("planetary_positions", {})
+    return {"error": "Unable to fetch planetary positions"}
+
+def get_divisional_charts(birth_date, birth_time, birth_place):
+    params = {
+        "date": birth_date,
+        "time": birth_time,
+        "location": birth_place,
+        "api_key": EPHEMERIS_API_KEY
+    }
+    response = requests.get(EPHEMERIS_API_URL, params=params)
+    if response.status_code == 200:
+        return response.json().get("divisional_charts", {})
+    return {"error": "Unable to fetch divisional charts"}
+
+def get_panchang_data(birth_date, birth_place):
+    params = {
+        "date": birth_date,
+        "location": birth_place,
+        "api_key": PANCHANG_API_KEY
+    }
+    response = requests.get(PANCHANG_API_URL, params=params)
+    if response.status_code == 200:
+        raw_data = response.json()
+        return {
+            "tithi": raw_data.get("tithi", "Unknown"),
+            "nakshatra": raw_data.get("nakshatra", "Unknown"),
+            "yoga": raw_data.get("yoga", "Unknown"),
+            "karana": raw_data.get("karana", "Unknown"),
+            "sunrise": raw_data.get("sunrise", "Unknown"),
+            "sunset": raw_data.get("sunset", "Unknown")
+        }
+    return {"error": "Unable to fetch Panchang data"}
+
+# Lagna Calculation Function
+def calculate_lagna(birth_date, birth_time, birth_place):
+    sunrise_time = get_sunrise_time(birth_date, birth_place)
+    sunrise_hour, sunrise_minute = map(int, sunrise_time.split(':'))
+    birth_hour, birth_minute = map(int, birth_time.split(':'))
+    
+    # Calculate time difference from sunrise
+    time_diff_minutes = (birth_hour - sunrise_hour) * 60 + (birth_minute - sunrise_minute)
+    
+    # Lagna progresses 1 degree every 4 minutes
+    lagna_degrees = time_diff_minutes / 4
+    
+    # Determine Lagna Sign
+    zodiac_signs = [
+        "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+        "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"
+    ]
+    
+    lagna_index = int(lagna_degrees // 30) % 12  # Each sign spans 30 degrees
+    lagna_sign = zodiac_signs[lagna_index]
+    final_lagna_degree = round(lagna_degrees % 30, 2)
+    
+    return {"lagna_sign": lagna_sign, "lagna_degree": final_lagna_degree}
+
+def generate_divisional_chart(divisional_data):
+    fig, ax = plt.subplots()
+    charts = list(divisional_data.keys())
+    values = [len(v) for v in divisional_data.values()]  # Example: Count of planets in each chart
+    
+    ax.barh(charts, values, color='purple')
+    ax.set_xlabel('Planetary Placements')
+    ax.set_title('Divisional Charts Overview')
+    
+    img = io.BytesIO()
+    plt.savefig(img, format='png')
+    img.seek(0)
+    encoded = base64.b64encode(img.getvalue()).decode('utf-8')
+    return encoded
+
+# Basic Astrology API Function
+def get_astrology_prediction(birth_date, birth_time, birth_place, query, panchang_data, lagna_data, planetary_positions, divisional_charts):
+    formatted_prompt = f"""
+    You are an expert Vedic astrologer. Using Lahiri Ayanamsa, planetary transits, the following Panchang details, calculated Lagna, planetary positions, and divisional charts, predict the outcome for:
+    Date of Birth: {birth_date}
+    Time of Birth: {birth_time}
+    Place of Birth: {birth_place}
+    Panchang Data: {panchang_data}
+    Lagna Data: {lagna_data}
+    Planetary Positions: {planetary_positions}
+    Divisional Charts: {divisional_charts}
+    User Query: {query}
+    Give an insightful but concise prediction.
+    """
+    
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[{"role": "system", "content": formatted_prompt}]
+    )
+    return response["choices"][0]["message"]["content"].strip()
+
+@app.route('/astrology', methods=['POST'])
+def astrology_api():
+    data = request.json
+    birth_date = data.get('birth_date')
+    birth_time = data.get('birth_time')
+    birth_place = data.get('birth_place')
+    query = data.get('query')
+    
+    if not all([birth_date, birth_time, birth_place, query]):
+        return jsonify({"error": "Missing required parameters"}), 400
+    
+    panchang_data = get_panchang_data(birth_date, birth_place)
+    lagna_data = calculate_lagna(birth_date, birth_time, birth_place)
+    planetary_positions = get_planetary_positions(birth_date, birth_place)
+    divisional_charts = get_divisional_charts(birth_date, birth_time, birth_place)
+    divisional_chart_img = generate_divisional_chart(divisional_charts)
+    prediction = get_astrology_prediction(birth_date, birth_time, birth_place, query, panchang_data, lagna_data, planetary_positions, divisional_charts)
+    
+    return jsonify({
+        "panchang_data": panchang_data,
+        "lagna_data": lagna_data,
+        "planetary_positions": planetary_positions,
+        "divisional_charts": divisional_charts,
+        "divisional_chart_img": divisional_chart_img,
+        "prediction": prediction
+    })
+
+if __name__ == '__main__':
+    app.run(debug=True)
